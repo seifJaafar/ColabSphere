@@ -1,0 +1,25 @@
+{
+  "name": "projectmanagement",
+  "version": "1.0.0",
+  "description": "ColabSphere project managemnet service",
+  "license": "ISC",
+  "author": "seif jaafar",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "kafkajs": "^2.2.4",
+    "morgan": "^1.10.0",
+    "pg": "^8.13.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.6"
+  }
+}
