@@ -15,22 +15,25 @@ import { ChatMessageList } from "./chat-message-list";
 import { useAutoScroll } from "@/components/ui/chat/hooks/useAutoScroll";
 import { EllipsisVertical, HeartIcon, Share } from "lucide-react";
 import { Forward, Heart } from "lucide-react";
+import { Avatar } from "@heroui/avatar";
 
 interface ChatListProps {
   messages: Message[];
   selectedUser: UserData;
   sendMessage: (newMessage: Message) => void;
   isMobile: boolean;
+  userID: string;
 }
 
-const getMessageVariant = (messageName: string, selectedUserName: string) =>
-  messageName !== selectedUserName ? "sent" : "received";
+const getMessageVariant = (messageName: string, userID: string) =>
+  messageName !== userID ? "received" : "sent";
 
 export function ChatList({
   messages,
   selectedUser,
   sendMessage,
   isMobile,
+  userID,
 }: ChatListProps) {
   const actionIcons = [
     { icon: EllipsisVertical, type: "More" },
@@ -43,7 +46,7 @@ export function ChatList({
       <ChatMessageList>
         <AnimatePresence>
           {messages.map((message, index) => {
-            const variant = getMessageVariant(message.name, selectedUser.name);
+            const variant = getMessageVariant(message.senderId, userID);
             return (
               <motion.div
                 key={index}
@@ -64,9 +67,9 @@ export function ChatList({
               >
                 {/* Usage of ChatBubble component */}
                 <ChatBubble variant={variant}>
-                  <ChatBubbleAvatar src={message.avatar} />
+                  <Avatar src={message.senderAvatar} />
                   <ChatBubbleMessage isLoading={message.isLoading}>
-                    {message.message}
+                    {message.content}
                     {message.timestamp && (
                       <ChatBubbleTimestamp timestamp={message.timestamp} />
                     )}

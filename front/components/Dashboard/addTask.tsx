@@ -60,6 +60,9 @@ export function AddTaskDialog({ projectID }: { projectID: string }) {
       description: response.message,
       variant: response.success ? "default" : "destructive",
     });
+    if (response.success) {
+      window.location.reload(); // Reload the page to fetch updated tasks
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -70,6 +73,9 @@ export function AddTaskDialog({ projectID }: { projectID: string }) {
       description: response.message,
       variant: response.success ? "default" : "destructive",
     });
+    if (response.success) {
+      window.location.reload(); // Reload the page to fetch updated modules
+    }
   };
 
   const fetchModules = async () => {

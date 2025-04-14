@@ -44,6 +44,10 @@ const consumeAvatarEvents = async () => {
     topic: "user-service-invite-members", // New topic to handle invite members
     fromBeginning: false,
   });
+  await consumer.subscribe({
+    topic: "user-data-request", // New topic to handle user data request
+    fromBeginning: false,
+  });
   await consumer.run({
     eachMessage: async ({ topic, message }) => {
       try {
@@ -70,6 +74,16 @@ const consumeAvatarEvents = async () => {
           } else {
             console.error("❌ Socket.IO is not connected. Cannot emit event.");
           }
+          const producer = kafka.producer();
+          await producer.connect();
+          await producer.send({
+            topic: "user-service-avatar-updated", // Topic to notify the Team Service
+            messages: [
+              {
+                value: JSON.stringify({ userId, avatarUrl }),
+              },
+            ],
+          });
         }
 
         // Handling new project creation and fetching public user data
@@ -80,7 +94,13 @@ const consumeAvatarEvents = async () => {
 
           // Fetch the public user data (you can extend this if needed)
           const user = await User.findByPk(userId, {
-            attributes: ["email", "username", "avatar"], // Get only public data
+            attributes: [
+              "email",
+              "username",
+              "avatar",
+              "googleAccessToken",
+              "githubAccessToken",
+            ], // Get only public data
           });
 
           if (!user) {
@@ -96,6 +116,8 @@ const consumeAvatarEvents = async () => {
             username: user.username,
             avatar: user.avatar,
             roles: roles,
+            googleAccessToken: user.googleAccessToken,
+            githubAccessToken: user.githubAccessToken,
           };
 
           // Send the public user data to the Team Service
@@ -113,6 +135,33 @@ const consumeAvatarEvents = async () => {
           console.log(
             `✅ Sent user public data to Team Service for project ${projectId}`
           );
+          await producer.disconnect();
+        }
+        if (topic === "user-data-request") {
+          const { userId } = JSON.parse(message.value.toString());
+          const user = await User.findByPk(userId, {
+            attributes: ["username", "avatar"],
+          });
+          console.log("user data for messaging", user);
+          if (!user) {
+            console.error(`❌ User ${userId} not found`);
+            return;
+          }
+          const producer = kafka.producer();
+          await producer.connect();
+          await producer.send({
+            topic: "user-data-response",
+            messages: [
+              {
+                value: JSON.stringify({
+                  userID: userId,
+                  username: user.username,
+                  avatar: user.avatar,
+                }),
+              },
+            ],
+          });
+          console.log(`✅ Sent user public data to messaging service`);
           await producer.disconnect();
         }
         if (topic === "user-service-invite-members") {
@@ -143,10 +192,6 @@ const consumeAvatarEvents = async () => {
               },
             ],
           });
-
-          console.log(
-            `✅ Sent invite details to Team Service for ${emails.length} members`
-          );
           await producer.disconnect();
         }
       } catch (error) {

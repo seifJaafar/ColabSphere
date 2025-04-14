@@ -13,13 +13,20 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "http://localhost:5001/auth/googleAuth/callback",
       passReqToCallback: true, // ✅ Requires `req` in callback function
-      scope: ["profile", "email"],
-      accessType: "offline", // ✅ Request refresh token
+      scope: [
+        "profile",
+        "email",
+        "https://www.googleapis.com/auth/drive",
+        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive.metadata",
+      ],
+      accessType: "offline", // Required to get refresh tokens
       prompt: "consent",
     },
     async (req, accessToken, refreshToken, profile, done) => {
       // 🔹 Added `req`
       try {
+        console.log("google refresh token", refreshToken);
         if (!profile) {
           console.error("Profile is undefined!");
           return done(

@@ -8,7 +8,12 @@ export const authenticateSocket = (socket, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    socket.user = decoded; // Attach user data to the socket
+    socket.user = decoded;
+    if (decoded.id?.includes("_service")) {
+      socket.role = "service"; // Assign role based on ID pattern
+    } else {
+      socket.role = "user"; // Assign role based on ID pattern
+    }
     next();
   } catch (error) {
     return next(new Error("Invalid token"));

@@ -1,45 +1,52 @@
+// providers/SocketProvider.tsx
 "use client";
+import { createContext, useContext, useEffect, useState } from "react";
+import { getSocket } from "@/config/socket";
+import { getAuthToken } from "@/config/auth";
 
-import { useEffect, useState } from "react";
-import { getSocket } from "../config/socket";
-import { getAuthToken } from "../config/auth";
-import { useUserStore } from "../config/UserStore";
+interface SocketContextType {
+  socket: any;
+  joinChatrooms: (chatroomIds: string[]) => void;
+}
 
-export const SocketProvider = () => {
-  const [socketConnected, setSocketConnected] = useState(false);
+const SocketContext = createContext<SocketContextType | null>(null);
+
+export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
+  const [socket, setSocket] = useState<any>(null);
 
   useEffect(() => {
-    const connectSocket = async () => {
+    const initializeSocket = async () => {
       const token = await getAuthToken();
       if (!token) return;
 
-      const socket = getSocket(token);
-      socket.connect();
-      setSocketConnected(true);
-
-      socket.on("avatarUpdated", ({ avatarUrl }) => {
-        useUserStore.getState().updateAvatar(avatarUrl);
-      });
-
-      socket.on("newMessage", (message) => {
-        console.log("📩 New message received:", message);
-      });
-
-      socket.on("notification", (notification) => {
-        console.log("🔔 New notification:", notification);
-      });
-
-      socket.on("disconnect", () => {
-        setSocketConnected(false);
-      });
+      const socketInstance = getSocket(token);
+      setSocket(socketInstance);
 
       return () => {
-        socket.disconnect();
+        socketInstance.disconnect();
       };
     };
 
-    connectSocket();
+    initializeSocket();
   }, []);
 
-  return null;
+  const joinChatrooms = (chatroomIds: string[]) => {
+    if (socket?.connected) {
+      socket.emit("joinChatrooms", chatroomIds);
+    }
+  };
+
+  return (
+    <SocketContext.Provider value={{ socket, joinChatrooms }}>
+      {children}
+    </SocketContext.Provider>
+  );
+};
+
+export const useSocket = () => {
+  const context = useContext(SocketContext);
+  if (!context) {
+    throw new Error("useSocket must be used within a SocketProvider");
+  }
+  return context;
 };

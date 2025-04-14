@@ -32,6 +32,7 @@ module.exports = (sequelize, DataTypes) => {
           model: "Projects", // Referencing 'Projects' model for projectId
           key: "id",
         },
+        onDelete: "CASCADE",
       },
     },
     {

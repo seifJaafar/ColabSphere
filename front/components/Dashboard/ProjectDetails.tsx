@@ -1,13 +1,14 @@
 "use client"; // Ensure this is treated as a client-side component
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { TeamSwitcher } from "@/components/ui/team-switcher";
 import { InviteDialog } from "@/components/Dashboard/InviteDialog";
-import { IconBrandGoogleDrive } from "@tabler/icons-react";
+
 import { Calendar, DoorOpen, Github, LineChart } from "lucide-react";
 import { TasksDataTable } from "@/components/Dashboard/TasksDataTable";
 import { MembersDataTable } from "@/components/Dashboard/MembersDataTable";
+import { MyTasksDataTable } from "@/components/Dashboard/MyTasksDataTable";
 import { ModulesDataTable } from "@/components/Dashboard/ModulesDataTable";
 import {
   Dialog,
@@ -18,8 +19,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
+import { GoogleDriveTab } from "@/components/Dashboard/GoogleDriveTab";
+import { GoogleCalendarTab } from "@/components/Dashboard/GoogleCalendarTab";
 import { Button } from "@/components/ui/button";
+import { LeaveProject } from "@/actions/projects/projectActions";
+import { useRouter } from "next/navigation";
 
 export function ProjectDetailsComponent({
   projectID,
@@ -34,27 +38,85 @@ export function ProjectDetailsComponent({
     { name: "Tasks", logo: "GalleryVerticalEnd" },
     { name: "Team", logo: "Users" },
     { name: "My Tasks", logo: "ListChecks" },
+    { name: "Task Dependancies", logo: "ListChecks" },
+    ,
     ...(roles && (roles.includes("owner") || roles.includes("manager"))
       ? [{ name: "Modules", logo: "Library" }]
       : []),
   ];
 
   // State to track active tab
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(teams[0]);
+  const [tasksDataFetched, setTasksDataFetched] = useState(false);
+  const [membersDataFetched, setMembersDataFetched] = useState(false);
+  const [modulesDataFetched, setModulesDataFetched] = useState(false);
+  const handleLeaveProject = async () => {
+    try {
+      const res = await LeaveProject(projectID);
+      if (res.success) {
+        router.push("/dashboard/projects");
+      } else {
+        alert("Error leaving project");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error leaving project");
+    }
+  };
+  // Effect to load data when the active tab changes
+  useEffect(() => {
+    if (activeTab.name === "Tasks" && !tasksDataFetched) {
+      setTasksDataFetched(true); // Prevent multiple fetches for tasks
+    }
+    if (activeTab.name === "Team" && !membersDataFetched) {
+      setMembersDataFetched(true); // Prevent multiple fetches for team members
+    }
+    if (activeTab.name === "Modules" && !modulesDataFetched) {
+      setModulesDataFetched(true); // Prevent multiple fetches for modules
+    }
+    if (activeTab.name === "Task Dependancies" && !tasksDataFetched) {
+      setTasksDataFetched(true); // Prevent multiple fetches for tasks
+    }
+  }, [activeTab, tasksDataFetched, membersDataFetched, modulesDataFetched]);
 
   const renderComponent = () => {
     switch (activeTab.name) {
       case "Tasks":
-        return <TasksDataTable projectID={projectID} />;
+        return tasksDataFetched ? (
+          <TasksDataTable projectID={projectID} />
+        ) : null;
       case "Team":
-        return <MembersDataTable />;
+        return membersDataFetched ? (
+          <MembersDataTable projectID={projectID} />
+        ) : null;
       case "My Tasks":
-        return <TasksDataTable projectID={projectID} />;
+        return tasksDataFetched ? (
+          <MyTasksDataTable projectID={projectID} />
+        ) : null;
+      case "Task Dependancies":
+        return tasksDataFetched ? (
+          <div className="flex flex-col items-center justify-center w-full h-full text-muted">
+            <Button
+              variant={"secondary"}
+              size={"lg"}
+              onClick={() => {
+                window.open(`/dashboard/dependancies/${projectID}`, "_blank");
+              }}
+            >
+              Open Task Dependancy graph
+            </Button>
+          </div>
+        ) : null;
       case "Modules":
         if (roles.includes("owner") || roles.includes("manager")) {
-          return <ModulesDataTable projectID={projectID} />;
+          return modulesDataFetched ? (
+            <ModulesDataTable projectID={projectID} />
+          ) : null;
         }
         break;
+      default:
+        return null;
     }
   };
 
@@ -73,27 +135,19 @@ export function ProjectDetailsComponent({
             ) : null}
 
             {/* Google Drive Dialog */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="icon" title="View Google Drive">
-                  <IconBrandGoogleDrive />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Google Drive Folder</DialogTitle>
-                  <DialogDescription>
-                    Access the project's Google Drive folder
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex justify-center items-center w-full h-full text-muted">
-                  <h2>This is the folder</h2>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <GoogleDriveTab
+              projectID={projectID}
+              isowner={roles.includes("owner")}
+            />
+
+            {/* Google Drive Dialog */}
 
             {/* Calendar Dialog */}
-            <Dialog>
+            <GoogleCalendarTab
+              projectID={projectID}
+              isowner={roles.includes("owner")}
+            />
+            {/*<Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="icon" title="View Calendar">
                   <Calendar />
@@ -110,7 +164,7 @@ export function ProjectDetailsComponent({
                   <h2>This is the calendar</h2>
                 </div>
               </DialogContent>
-            </Dialog>
+            </Dialog> */}
 
             {/* Github Dialog */}
             <Dialog>
@@ -131,7 +185,7 @@ export function ProjectDetailsComponent({
                 </div>
               </DialogContent>
             </Dialog>
-            {/*Linkk to analytics page*/}
+            {/* Link to analytics page */}
 
             {(roles.includes("owner") || roles.includes("manager")) && (
               <Link href={`projects/${projectID}/analytics`}>
@@ -141,7 +195,7 @@ export function ProjectDetailsComponent({
               </Link>
             )}
             {
-              /*Leave Project*/
+              /* Leave Project */
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="icon" title="Leave Project">
@@ -153,12 +207,14 @@ export function ProjectDetailsComponent({
                     <DialogTitle>Leave Project</DialogTitle>
                   </DialogHeader>
                   <div className="flex w-full h-full text-white">
-                    <p>
-                      Are you sure you want to the leave the {title}'s team ?
-                    </p>
+                    <p>Are you sure you want to leave the {title}'s team?</p>
                   </div>
                   <DialogFooter>
-                    <Button variant="destructive" className="mr-2">
+                    <Button
+                      variant="destructive"
+                      className="mr-2"
+                      onClick={handleLeaveProject}
+                    >
                       Leave
                     </Button>
                     <Button variant="outline">Cancel</Button>

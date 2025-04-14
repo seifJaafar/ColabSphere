@@ -1,5 +1,44 @@
 "use server";
 import api from "@/config/axios";
+export async function GetMyTasks(projectID: string) {
+  try {
+    if (!projectID) {
+      return { success: false, message: "Please provide a project ID" };
+    }
+    const response = await api.get(
+      `/projectsService/tasks/myTasks/${projectID}`
+    );
+    if (response.data.success) {
+      return { success: true, tasks: response.data.tasks };
+    } else {
+      return { success: false, message: response.data.message, tasks: [] };
+    }
+  } catch (err: any) {
+    const message = "something went wrong";
+    return { success: false, message, tasks: [] };
+  }
+}
+export async function AssignTask(taskID: string, userID: string) {
+  try {
+    if (!taskID || !userID) {
+      return {
+        success: false,
+        message: "Please provide a task ID and user ID",
+      };
+    }
+    const response = await api.post(`/projectsService/tasks/assign/${taskID}`, {
+      assignTo: userID,
+    });
+    if (response.data.success) {
+      return { success: true, message: response.data.message };
+    } else {
+      return { success: false, message: response.data.message };
+    }
+  } catch (err: any) {
+    const message = err.response?.data?.message || "something went wrong";
+    return { success: false, message };
+  }
+}
 export async function deleteTask(taskID: string) {
   try {
     if (!taskID) {
@@ -18,8 +57,6 @@ export async function deleteTask(taskID: string) {
 }
 export async function updateTask(task: any, taskID: string) {
   try {
-    console.log(task);
-    console.log(taskID);
     if (!task || !taskID) {
       return { success: false, message: "Please provide a task and task ID" };
     }

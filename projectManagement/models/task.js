@@ -12,6 +12,16 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "projectID",
         onDelete: "CASCADE",
       });
+
+      // Add these new associations
+      Task.hasMany(models.TaskDependency, {
+        foreignKey: "taskId",
+        as: "dependencies",
+      });
+      Task.hasMany(models.TaskDependency, {
+        foreignKey: "dependsOnId",
+        as: "dependents",
+      });
     }
   }
   Task.init(
@@ -59,8 +69,13 @@ module.exports = (sequelize, DataTypes) => {
           model: "Projects", // Referencing 'Projects' model for projectId
           key: "id",
         },
+        onDelete: "CASCADE",
       },
       module: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      assignedTo: {
         type: DataTypes.STRING,
         allowNull: true,
       },

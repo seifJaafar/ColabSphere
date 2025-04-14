@@ -4,10 +4,14 @@ import { Button } from "../ui/button";
 import { Avatar } from "@heroui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AddTaskDialog } from "@/components/Dashboard/addTask";
+import { TaskChnageStatus } from "@/components/Dashboard/TaskChangeStatus";
+
 import { GetTasks } from "@/actions/projects/TaskActions";
 import { useUserStore } from "@/config/UserStore";
 import { UpdateTaskDialog } from "@/components/Dashboard/updateTask";
 import { DeleteTaskDialog } from "@/components/Dashboard/DeleteTasks";
+import { AssignToDialog } from "@/components/Dashboard/assignTo";
+import { User } from "@heroui/user";
 const getDifficulityColor = (difficulty: string) => {
   switch (difficulty) {
     case "easy":
@@ -140,17 +144,22 @@ export function TasksDataTable({ projectID }: { projectID: string }) {
         },
       },
       {
-        id: "assignedTo",
+        id: "assigneeTeamData",
         header: "Assigned To",
         cell: ({ row }: { row: any }) => {
-          const assignedTo = row.original.assignedTo;
+          const assignedTo = row.original.assigneeTeamData;
           return (
             <div className="flex items-center gap-2">
-              {assignedTo?.avatar ? (
-                <div className="">
-                  <Avatar src="/Seifjaafar.webp" />
-                  <span>{assignedTo?.email}</span>
-                </div>
+              {assignedTo ? (
+                <User
+                  avatarProps={{
+                    src: assignedTo.avatar,
+                    alt: "Avatar",
+                  }}
+                  description={assignedTo.email}
+                  name={assignedTo.username}
+                  className="justify-start"
+                />
               ) : (
                 <span>Not Assigned</span>
               )}
@@ -165,34 +174,32 @@ export function TasksDataTable({ projectID }: { projectID: string }) {
 
     if (
       isManagerOrOwner ||
-      tasks.some((task) => task.assignedTo?.id === user.id)
+      tasks.some((task) => task.assigneeTeamData?.userId === user.id)
     ) {
       baseColumns.push({
         id: "actions",
         header: "Actions",
         cell: ({ row }: { row: any }) => {
           const assignedTo = row.original.assignedTo;
-          const isAssignedToUser = assignedTo?.id === user.id;
-
+          const isAssignedToUser = row.original.assignedTo === user.id;
           if (isManagerOrOwner) {
             return (
               <div className="flex items-center gap-4">
                 <UpdateTaskDialog taskData={row.original} />
                 <DeleteTaskDialog taskData={row.original} />
+                <AssignToDialog
+                  taskID={row.original.taskID}
+                  projectID={projectID}
+                  assignedTo={assignedTo}
+                />
               </div>
             );
           }
 
           if (isAssignedToUser) {
-            return (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => alert(`Taking action on ${row.original.title}`)}
-              >
-                Take Action
-              </Button>
-            );
+            const taskStatus = row.original.status;
+            const taskID = row.original.taskID;
+            return <TaskChnageStatus taskID={taskID} taskStatus={taskStatus} />;
           }
 
           return <></>;

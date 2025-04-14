@@ -1,80 +1,112 @@
-import {
-  ChatBotMessages,
-  Message,
-  UserData,
-  userData,
-  Users,
-} from "@/data/ChatData";
 import { create } from "zustand";
 
-export interface Example {
+interface Message {
+  id: string;
+  content: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  timestamp: string;
+  status?: "sending" | "delivered" | "failed";
+  chatroomId: string; // Added to associate messages with chatrooms
+}
+
+interface UserData {
+  id: string;
   name: string;
-  url: string;
+  avatar?: string;
 }
 
-interface State {
-  selectedExample: Example;
-  examples: Example[];
-  input: string;
-  chatBotMessages: Message[];
+interface Chatroom {
+  id: string;
+  title: string;
+  participants?: UserData[];
+}
+
+interface ChatState {
   messages: Message[];
-  hasInitialAIResponse: boolean;
-  hasInitialResponse: boolean;
-}
+  chatrooms: Chatroom[];
+  currentChatroomId: string | null;
+  selectedUser: UserData | null;
 
-interface Actions {
-  selectedUser: UserData;
-  setSelectedExample: (example: Example) => void;
-  setExamples: (examples: Example[]) => void;
-  setInput: (input: string) => void;
-  handleInputChange: (
-    e:
-      | React.ChangeEvent<HTMLInputElement>
-      | React.ChangeEvent<HTMLTextAreaElement>
+  // Message actions
+  setMessages: (messages: Message[]) => void;
+  addMessage: (message: Message) => void;
+  updateMessageStatus: (
+    messageId: string,
+    status: "delivered" | "failed"
   ) => void;
-  setchatBotMessages: (fn: (chatBotMessages: Message[]) => Message[]) => void;
-  setMessages: (fn: (messages: Message[]) => Message[]) => void;
-  setHasInitialAIResponse: (hasInitialAIResponse: boolean) => void;
-  setHasInitialResponse: (hasInitialResponse: boolean) => void;
+
+  // Chatroom actions
+  setChatrooms: (chatrooms: Chatroom[]) => void;
+  setCurrentChatroom: (chatroomId: string) => void;
+  setSelectedUser: (user: UserData | null) => void;
+
+  unreadCounts: Record<string, number>;
+  incrementUnreadCount: (chatroomId: string) => void;
+  resetUnreadCount: (chatroomId: string) => void;
+  // Reset
+  reset: () => void;
 }
 
-const useChatStore = create<State & Actions>()((set) => ({
-  selectedUser: Users[4],
+const initialState = {
+  messages: [],
+  chatrooms: [],
+  currentChatroomId: null,
+  selectedUser: null,
+};
 
-  selectedExample: { name: "Messenger example", url: "/" },
+const useChatStore = create<ChatState>((set) => ({
+  ...initialState,
 
-  examples: [
-    { name: "Messenger example", url: "/" },
-    { name: "Chatbot example", url: "/chatbot" },
-    { name: "Chatbot2 example", url: "/chatbot2" },
-  ],
+  // Message actions
+  setMessages: (messages) => set({ messages }),
 
-  input: "",
+  addMessage: (message) =>
+    set((state) => ({
+      messages: [...state.messages, message],
+      chatrooms: state.chatrooms.map((room) =>
+        room.id === message.chatroomId
+          ? {
+              ...room,
+              lastMessage: message,
+            }
+          : room
+      ),
+    })),
 
-  setSelectedExample: (selectedExample) => set({ selectedExample }),
+  updateMessageStatus: (messageId, status) =>
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg.id === messageId ? { ...msg, status } : msg
+      ),
+    })),
 
-  setExamples: (examples) => set({ examples }),
+  // Chatroom actions
+  setChatrooms: (chatrooms) => set({ chatrooms }),
 
-  setInput: (input) => set({ input }),
-  handleInputChange: (
-    e:
-      | React.ChangeEvent<HTMLInputElement>
-      | React.ChangeEvent<HTMLTextAreaElement>
-  ) => set({ input: e.target.value }),
+  setCurrentChatroom: (chatroomId) => set({ currentChatroomId: chatroomId }),
 
-  chatBotMessages: ChatBotMessages,
-  setchatBotMessages: (fn) =>
-    set(({ chatBotMessages }) => ({ chatBotMessages: fn(chatBotMessages) })),
+  setSelectedUser: (user) => set({ selectedUser: user }),
 
-  messages: userData[0].messages,
-  setMessages: (fn) => set(({ messages }) => ({ messages: fn(messages) })),
+  reset: () => set(initialState),
+  unreadCounts: {},
 
-  hasInitialAIResponse: false,
-  setHasInitialAIResponse: (hasInitialAIResponse) =>
-    set({ hasInitialAIResponse }),
+  incrementUnreadCount: (chatroomId) =>
+    set((state) => ({
+      unreadCounts: {
+        ...state.unreadCounts,
+        [chatroomId]: (state.unreadCounts[chatroomId] || 0) + 1,
+      },
+    })),
 
-  hasInitialResponse: false,
-  setHasInitialResponse: (hasInitialResponse) => set({ hasInitialResponse }),
+  resetUnreadCount: (chatroomId) =>
+    set((state) => ({
+      unreadCounts: {
+        ...state.unreadCounts,
+        [chatroomId]: 0,
+      },
+    })),
 }));
 
 export default useChatStore;

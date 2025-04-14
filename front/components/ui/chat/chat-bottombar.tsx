@@ -1,42 +1,34 @@
+"use client";
+
 import { FileImage, Paperclip, SendHorizontal, XCircle } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
-import { Message, loggedInUserData } from "@/data/ChatData";
 import { ChatInput } from "@/components/ui/chat/chat-input";
-import useChatStore from "@/components/ui/chat/hooks/useChatStore";
 import { EmojiPickerComponent } from "./emoji-picker";
+
 interface ChatBottombarProps {
   isMobile: boolean;
+  isSending: boolean;
+  sendMessage: (content: string) => void;
 }
 
-export default function ChatBottombar({ isMobile }: ChatBottombarProps) {
+export default function ChatBottombar({
+  isMobile,
+  isSending,
+  sendMessage,
+}: ChatBottombarProps) {
   const [message, setMessage] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const setMessages = useChatStore((state) => state.setMessages);
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-  const sendMessage = (newMessage: Message) => {
-    useChatStore.setState((state) => ({
-      messages: [...state.messages, newMessage],
-    }));
-  };
-
   const handleSend = () => {
-    if (message.trim() || file) {
-      const newMessage: Message = {
-        id: message.length + 1,
-        name: loggedInUserData.name,
-        avatar: loggedInUserData.avatar,
-        message: file ? file.name : message.trim(),
-        file: file || undefined,
-      };
-      console.log(newMessage);
-      sendMessage(newMessage);
+    if (message.trim()) {
+      sendMessage(message.trim());
       setMessage("");
       setFile(null);
     }
@@ -58,8 +50,9 @@ export default function ChatBottombar({ isMobile }: ChatBottombarProps) {
         alert("File size exceeds the 5MB limit!");
         return;
       }
-      event.target.value = "";
+
       setFile(selectedFile);
+      event.target.value = "";
     }
   };
 
@@ -69,42 +62,6 @@ export default function ChatBottombar({ isMobile }: ChatBottombarProps) {
 
   return (
     <div className="px-2 py-4 flex justify-between w-full items-center gap-2">
-      <div className="flex">
-        {/* Image Input */}
-        <input
-          type="file"
-          ref={imageInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={(e) => handleFileChange(e, true)}
-        />
-        <Button
-          onClick={() => imageInputRef.current?.click()}
-          variant="ghost"
-          size="icon"
-          title="Attach an image"
-        >
-          <FileImage size={22} className="text-muted-foreground" />
-        </Button>
-
-        {/* General File Input */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="*/*"
-          onChange={(e) => handleFileChange(e, false)}
-        />
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          variant="ghost"
-          size="icon"
-          title="Attach a file"
-        >
-          <Paperclip size={22} className="text-muted-foreground" />
-        </Button>
-      </div>
-
       <AnimatePresence initial={false}>
         <motion.div
           key="input"
@@ -133,8 +90,15 @@ export default function ChatBottombar({ isMobile }: ChatBottombarProps) {
               value={message}
               ref={inputRef}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder="Type a message..."
-              className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary resize-none overflow-hidden "
+              className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary resize-none overflow-hidden"
+              disabled={isSending}
             />
           )}
         </motion.div>
@@ -146,6 +110,7 @@ export default function ChatBottombar({ isMobile }: ChatBottombarProps) {
                 inputRef.current.focus();
               }
             }}
+            disabled={isSending}
           />
           <Button
             className="h-9 w-9 shrink-0"
@@ -153,6 +118,7 @@ export default function ChatBottombar({ isMobile }: ChatBottombarProps) {
             onClick={handleSend}
             variant="ghost"
             size="icon"
+            disabled={!message.trim() || isSending}
           >
             <SendHorizontal size={22} className="text-muted-foreground" />
           </Button>

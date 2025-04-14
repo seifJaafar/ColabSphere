@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const redisClient = require("../config/redisClient"); // No need for .js in CommonJS
 const db = require("../models/index");
-
+const { LinkGoogleProducer } = require("../config/kafka");
 const { sendEmail, ResetPassword } = require("../config/mailing");
 const { User } = db;
 dotenv.config();
@@ -102,7 +102,6 @@ const refreshToken = async (req, res) => {
 
         const storedToken = await redisClient.get(user.id.toString());
         if (storedToken !== refreshToken) {
-          console.log("here error2");
           return res.status(403).json({ message: "Invalid refresh token" });
         }
 
@@ -133,16 +132,49 @@ const logout = async (req, res) => {
     res.status(500).json({ message: "Logout error" });
   }
 };
+
 const GoogleCallback = async (req, res) => {
   try {
     const { id, email, displayName, GoogleaccessToken, GooglerefreshToken } =
       req.user;
+    let state = {};
 
-    // Check if the user exists in the database
+    try {
+      state = req.query.state ? JSON.parse(req.query.state) : {};
+      console.log("State:", state);
+    } catch (e) {
+      console.error("Error parsing state", e);
+    }
+
+    // Check if this is an account linking flow
+    if (state.userId) {
+      const currentUser = await User.findOne({ where: { id: state.userId } });
+      if (!currentUser) {
+        return res.redirect(
+          `${process.env.CLIENT_URL}/error?message=User not found`
+        );
+      }
+
+      // Link Google account to existing user
+      currentUser.googleAccessToken = GoogleaccessToken;
+      currentUser.googleRefreshToken = GooglerefreshToken;
+
+      await currentUser.save();
+      await LinkGoogleProducer({
+        token: GoogleaccessToken,
+        refreshToken: GooglerefreshToken,
+        id: currentUser.id,
+      });
+      return res.redirect(
+        `${process.env.CLIENT_URL}/dashboard/projects?google_linked=true`
+      );
+    }
+
+    // Normal authentication flow
     let user = await User.findOne({ where: { email } });
 
     if (!user) {
-      // Create new user with random password
+      // Create new user
       user = await User.create({
         email,
         username: displayName,
@@ -151,22 +183,29 @@ const GoogleCallback = async (req, res) => {
         googleAccessToken: GoogleaccessToken,
       });
     } else {
+      // Update existing user's Google tokens
       user.googleAccessToken = GoogleaccessToken;
       user.googleRefreshToken = GooglerefreshToken;
+      user.googleId = id;
+
       await user.save();
+      await LinkGoogleProducer({ token: GoogleaccessToken, id: user.id });
     }
 
     // Generate JWT tokens
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Store refresh token (if needed)
+    // Store refresh token
     await redisClient.set(user.id.toString(), refreshToken);
+
     const redirectUrl = `${process.env.CLIENT_URL}/confirm?accessToken=${accessToken}&refreshToken=${refreshToken}&email=${email}&username=${displayName}&avatar=${user.avatar}&id=${user.id}`;
     res.redirect(redirectUrl);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Google OAuth login error" });
+    res.redirect(
+      `${process.env.CLIENT_URL}/error?message=Google OAuth login error`
+    );
   }
 };
 const GithubCallback = async (req, res) => {

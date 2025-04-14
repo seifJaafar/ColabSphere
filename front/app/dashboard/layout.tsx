@@ -30,14 +30,17 @@ export default function DashboardLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased `}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
           <SidebarProvider>
-            <SocketProvider />
-            <AppSidebar />
-            <SidebarInset>{children}</SidebarInset>
-            <Toaster />
+            <SocketProvider>
+              {" "}
+              {/* Now properly wrapping children */}
+              <AppSidebar />
+              <SidebarInset>{children}</SidebarInset>
+              <Toaster />
+            </SocketProvider>
           </SidebarProvider>
         </ThemeProvider>
       </body>

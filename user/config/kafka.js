@@ -14,7 +14,24 @@ const connectProducer = async () => {
   await producer.connect();
   console.log("✅ Kafka producer connected.");
 };
-
+const LinkGoogleProducer = async (data) => {
+  try {
+    const producer = kafka.producer();
+    await producer.connect();
+    await producer.send({
+      topic: "google-data-topic", // Topic to notify the Team Service
+      messages: [
+        {
+          value: JSON.stringify(data),
+        },
+      ],
+    });
+    await producer.disconnect();
+    console.log("✅ Message sent to google-data-topic successfully.");
+  } catch (error) {
+    console.error("Error in LinkGoogleProducer:", error);
+  }
+};
 // Graceful shutdown function
 const shutdownGracefully = async () => {
   console.log("❌ Shutting down gracefully...");
@@ -36,4 +53,4 @@ const shutdownGracefully = async () => {
 process.on("SIGINT", shutdownGracefully); // Ctrl+C
 process.on("SIGTERM", shutdownGracefully); // Termination signal (e.g., from Docker or cloud environments)
 
-module.exports = { producer, connectProducer };
+module.exports = { producer, connectProducer, LinkGoogleProducer };

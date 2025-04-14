@@ -7,7 +7,9 @@ const morgan = require("morgan");
 const projectRouter = require("./routes/projectRoutes");
 const moduleRouter = require("./routes/modulRoutes");
 const taskRouter = require("./routes/tasksRoutes");
+const taskDependencyRouter = require("./routes/taskDependancyRoute");
 const { consumeTeamServiceTopic } = require("./config/kafkaConsumer");
+const { connectProducer } = require("./config/kafkaProducer");
 dotenv.config();
 const app = express();
 
@@ -19,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/projects", projectRouter);
 app.use("/modules", moduleRouter);
 app.use("/tasks", taskRouter);
+app.use("/dependencies", taskDependencyRouter);
 app.use((req, res) => {
   res.status(404).json({ error: "Page Not Found" });
 });
@@ -36,6 +39,8 @@ const startServices = async () => {
     await sequelize.authenticate();
     console.log("✅ Database connected successfully!");
     await sequelize.sync();
+    await connectProducer(); // ✅ Connect to Kafka Producer
+    console.log("✅ Kafka producer connected successfully!");
     await consumeTeamServiceTopic();
     console.log("✅ Kafka consumer (Team Service) started!");
   } catch (error) {

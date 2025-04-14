@@ -40,7 +40,7 @@ export default function ChatTopbar({ selectedUser }: ChatTopbarProps) {
       <div className="flex items-center gap-2">
         <Avatar
           className="w-10 h-10"
-          src={selectedUser.avatar}
+          name={selectedUser.name}
           alt={selectedUser.name}
         ></Avatar>
         <span className="font-medium">{selectedUser.name}</span>

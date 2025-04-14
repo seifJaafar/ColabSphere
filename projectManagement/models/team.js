@@ -53,6 +53,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: false,
       },
+
+      googleaccesstoken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      googlerefreshtoken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      githubaccesstoken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       sequelize,

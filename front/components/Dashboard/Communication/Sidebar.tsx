@@ -2,22 +2,30 @@
 
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
-
 import { Avatar } from "@heroui/avatar";
 import { Message } from "@/data/ChatData";
-
+import { Badge } from "@/components/ui/badge";
 interface SidebarProps {
   isCollapsed: boolean;
   chats: {
+    id: string; // Add id to the chat object
     name: string;
     messages: Message[];
     avatar: string;
     variant: "secondary" | "ghost";
+    unreadCount?: number;
   }[];
   isMobile: boolean;
+  onSelectChat?: (id: string) => void; // Make it optional
 }
 
-export function Sidebar({ chats, isCollapsed }: SidebarProps) {
+export function Sidebar({ chats, isCollapsed, onSelectChat }: SidebarProps) {
+  const handleChatClick = (id: string) => {
+    if (onSelectChat) {
+      onSelectChat(id);
+    }
+  };
+
   return (
     <div className="relative flex flex-col h-full bg-muted/10 dark:bg-muted/20 gap-4 p-3">
       {!isCollapsed && (
@@ -30,29 +38,27 @@ export function Sidebar({ chats, isCollapsed }: SidebarProps) {
         </div>
       )}
       <nav className="flex flex-col items-center gap-2">
-        {chats.map((chat, index) => (
+        {chats.map((chat) => (
           <Link
-            key={index}
+            key={chat.id}
             href="#"
             className="flex items-center gap-2 p-2 w-full hover:bg-muted"
+            onClick={(e) => {
+              e.preventDefault();
+              handleChatClick(chat.id);
+            }}
           >
             <Avatar
-              src={chat.avatar}
+              name={chat.name}
               alt={chat.name}
               size="md"
               {...(isCollapsed && { className: "w-8 h-8" })}
             />
             {!isCollapsed && (
-              <div className="flex flex-col">
+              <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">{chat.name}</span>
-                {chat.messages.length > 0 && (
-                  <span className="text-xs text-gray-500 truncate w-32">
-                    {chat.messages[chat.messages.length - 1].name.split(" ")[0]}
-                    :
-                    {chat.messages[chat.messages.length - 1].isLoading
-                      ? " Typing..."
-                      : ` ${chat.messages[chat.messages.length - 1].message}`}
-                  </span>
+                {chat.unreadCount > 0 && (
+                  <Badge variant="destructive">{chat.unreadCount}</Badge>
                 )}
               </div>
             )}

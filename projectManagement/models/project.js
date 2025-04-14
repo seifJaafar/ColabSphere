@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
       Project.hasMany(models.Team, {
         foreignKey: "projectId",
         as: "teams", // Alias to use in eager loading
+        onDelete: "CASCADE",
       });
     }
   }
@@ -39,6 +40,14 @@ module.exports = (sequelize, DataTypes) => {
       },
       finishedDate: {
         type: DataTypes.DATE,
+        allowNull: true,
+      },
+      driveurl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      calendarurl: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
     },

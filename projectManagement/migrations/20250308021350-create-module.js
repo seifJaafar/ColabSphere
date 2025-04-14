@@ -19,6 +19,7 @@ module.exports = {
           model: "Projects", // Referencing 'Projects' model for projectId
           key: "id",
         },
+        onDelete: "CASCADE",
       },
       createdAt: {
         allowNull: false,

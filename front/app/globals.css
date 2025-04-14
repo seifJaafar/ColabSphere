@@ -145,8 +145,14 @@
   }
 }
 
-
-
+.react-flow__node {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.react-flow__controls-button {
+  color: black !important;
+}
 @layer base {
   * {
     @apply border-border outline-ring/50;

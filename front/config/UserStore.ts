@@ -23,30 +23,34 @@ export const useUserStore = create<UserState>()(
         username: "",
         avatar: "",
         id: "",
-      }, // Initial state
-      setUser: (user) => {
-        set({ user });
       },
-      updateAvatar: (avatarUrl) => {
+      setUser: (user) =>
+        set(() => ({
+          user,
+        })),
+      updateAvatar: (avatarUrl) =>
         set((state) => ({
-          user: { ...state.user, avatar: avatarUrl },
-        }));
-      }, // Function to set user data
+          user: {
+            ...state.user,
+            avatar: avatarUrl,
+          },
+        })),
       logout: () => {
-        localStorage.clear();
-        set({
+        set(() => ({
           user: {
             email: "",
             username: "",
             avatar: "",
             id: "",
           },
-        });
-      }, // Function to remove user data
+        }));
+        localStorage.removeItem("user-store"); // safer than clearing all storage
+      },
     }),
     {
-      name: "user-store", // Key for localStorage
-      storage: createJSONStorage(() => localStorage), // Persist in localStorage
+      name: "user-store", // Local storage key
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ user: state.user }), // Optional: Save only what's needed
     }
   )
 );

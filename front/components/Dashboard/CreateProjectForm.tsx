@@ -46,6 +46,9 @@ export function CreateProjectForm() {
         variant: state.success ? "default" : "destructive",
       });
     }
+    if (state.success) {
+      window.location.reload();
+    }
   }, [state]);
   if (isDesktop) {
     return (

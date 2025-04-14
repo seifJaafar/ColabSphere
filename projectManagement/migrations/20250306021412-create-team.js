@@ -41,6 +41,14 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
       },
+      googleaccesstoken: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      githubaccesstoken: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
     });
 
     // Set the combination of `userId` and `projectId` as the primary key

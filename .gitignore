@@ -1,3 +1,14 @@
 **/node_modules/
 front/.next/
 **/.env
+.env
+*.env
+*/.env
+*.env.local
+*/.env.development.local
+*.env.test.local
+*/.env.production.local
+*.env.development
+*/.env.test
+*.env.production
+kafka/kafka_2.13-3.9.0/

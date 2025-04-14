@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { UpdateProjectDialog } from "@/components/Dashboard/UpdateProject";
+import { DeleteProjectDialog } from "@/components/Dashboard/DeleteProject";
 import { User } from "@heroui/user";
 type Member = {
   userId: string;
@@ -121,20 +123,8 @@ export function Projects({ projects, itemsPerPage = 6 }: ProjectsProps) {
                       (project.roles.includes("owner") ||
                         project.roles.includes("manager")) && (
                         <div className="flex gap-3">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              Router.push(
-                                `/dashboard/projects/${project.id}/edit`
-                              );
-                            }}
-                          >
-                            <Pencil />
-                          </Button>
-                          <Button variant="destructive" size="icon">
-                            <Trash />
-                          </Button>
+                          <UpdateProjectDialog projectData={project} />
+                          <DeleteProjectDialog projectData={project} />
                         </div>
                       )}
                   </CardHeader>
@@ -166,9 +156,19 @@ export function Projects({ projects, itemsPerPage = 6 }: ProjectsProps) {
                     )}
 
                     <div className="w-full flex items-center">
-                      <Progress value={(5 / 20) * 100} className="w-[60%]" />
+                      <Progress
+                        value={
+                          (project.totalCompletedTasks / project.totalTasks) *
+                          100
+                        }
+                        className="w-[60%]"
+                      />
                       <span className="ml-2 text-sm font-semibold">
-                        {Math.round((5 / 20) * 100)}%
+                        {Math.round(
+                          (project.totalCompletedTasks / project.totalTasks) *
+                            100
+                        )}
+                        %
                       </span>
                     </div>
                     <div className="flex gap-3 mt-4">
@@ -199,7 +199,9 @@ export function Projects({ projects, itemsPerPage = 6 }: ProjectsProps) {
                             : "bg-orange-500 hover:bg-orange-600"
                         }`}
                       >
-                        {project.status}
+                        {project.status +
+                          " / " +
+                          new Date(project.dueDate).toISOString().split("T")[0]}
                       </Badge>
 
                       <Button

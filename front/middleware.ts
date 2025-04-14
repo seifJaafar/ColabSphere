@@ -6,7 +6,6 @@ export async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const pathname = url.pathname;
   try {
-    console.log("middleware working");
     const AccessResponse = await api.get("/validate").catch((error) => {
       // ✅ Explicitly handle 401 and 403 without throwing
       if (error.response?.status === 401 || error.response?.status === 403) {
